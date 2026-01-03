@@ -12,6 +12,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
@@ -21,6 +22,8 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19",
+    "@commitlint/config-conventional": "^19",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -32,8 +35,6 @@
     "eslint-import-resolver-typescript": "^3",
     "eslint-plugin-import-x": "^4",
     "eslint-plugin-unused-imports": "^4",
-    "@commitlint/cli": "^19",
-    "@commitlint/config-conventional": "^19",
     "husky": "^9",
     "lint-staged": "^15",
     "tailwindcss": "^4",
