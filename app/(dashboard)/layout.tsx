@@ -1,3 +1,4 @@
+import { Navbar } from './_components/navbar';
 import { OrganizationSidebar } from './_components/organization-sidebar';
 import { Sidebar } from './_components/sidebar';
 
@@ -13,7 +14,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex gap-x-3 h-full">
           <OrganizationSidebar />
           <div className="h-full flex-1">
-            {/* Add Navbar */}
+            <Navbar />
             {children}
           </div>
         </div>
