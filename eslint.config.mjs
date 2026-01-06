@@ -8,7 +8,13 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
+    'convex/_generated/**',
+  ]),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {

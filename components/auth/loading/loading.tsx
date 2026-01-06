@@ -9,6 +9,7 @@ const Loading = () => {
         width={40}
         height={40}
         alt="Mira Logo"
+        loading="eager"
         className="animate-pulse duration-700"
       />
     </div>
