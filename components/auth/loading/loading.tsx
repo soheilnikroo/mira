@@ -6,8 +6,8 @@ const Loading = () => {
     <div className="h-full w-full flex flex-col justify-center items-center gap-y-4">
       <Image
         src="/logo.svg"
-        width={40}
-        height={40}
+        width={60}
+        height={60}
         alt="Mira Logo"
         loading="eager"
         className="animate-pulse duration-700"
