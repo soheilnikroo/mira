@@ -5,8 +5,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 import { Actions } from '@/components/actions';
+import { api } from '@/convex/_generated/api';
+import { useApiMutation } from '@/hooks/use-api-mutation';
 
 import { Footer } from './sub-components/footer';
 import { Overlay } from './sub-components/overlay';
@@ -23,11 +26,36 @@ export default function BoardCard({
   orgId,
   isFavorite,
 }: BoardCardProps) {
+  const { mutate: favoriteBoard, pending: favoriteBoardPending } =
+    useApiMutation(api.board.favorite);
+  const { mutate: unFavoriteBoard, pending: unFavoriteBoardPending } =
+    useApiMutation(api.board.unFavorite);
   const { userId } = useAuth();
   const isAuthor = userId === authorId;
 
   const authorLabel = isAuthor ? 'You' : authorName;
   const createdAtLabel = formatDistanceToNow(createdAt, { addSuffix: true });
+
+  const handleFavorite = async () => {
+    try {
+      if (isFavorite) {
+        await unFavoriteBoard({ id });
+        return;
+      }
+
+      await favoriteBoard({ id, orgId });
+      return;
+    } catch (error) {
+      toast.error('Failed to favorite board', {
+        description: 'Please try again later.',
+        action: {
+          label: 'Try again',
+          onClick: handleFavorite,
+        },
+      });
+      console.error(error);
+    }
+  };
 
   return (
     <Link href={`/board/${id}`}>
@@ -46,8 +74,8 @@ export default function BoardCard({
           authorLabel={authorLabel}
           createdAtLabel={createdAtLabel}
           title={title}
-          onClick={() => {}}
-          disabled={false}
+          onClick={handleFavorite}
+          disabled={favoriteBoardPending || unFavoriteBoardPending}
         />
       </div>
     </Link>
