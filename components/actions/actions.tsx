@@ -1,8 +1,9 @@
-import { Link2, Trash2 } from 'lucide-react';
+import { Link2, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { api } from '@/convex/_generated/api';
 import { useApiMutation } from '@/hooks/use-api-mutation';
+import { useRenameModal } from '@/store/use-rename-modal';
 
 import { ConfirmModal } from '../confirm-modal';
 import { Button } from '../ui/button';
@@ -17,6 +18,7 @@ import {
 import type { ActionsProps } from './actions.types';
 
 const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
+  const { onOpen: onOpenRenameModal } = useRenameModal();
   const { mutate: removeBoard, pending: removeBoardPending } = useApiMutation(
     api.board.remove
   );
@@ -82,6 +84,13 @@ const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
         >
           <Link2 className="w-4 h-4 mr-2" />
           Copy the board link
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="p-3 cursor-pointer"
+          onClick={() => onOpenRenameModal(id, title)}
+        >
+          <Pencil className="w-4 h-4 mr-2" />
+          Rename the board title
         </DropdownMenuItem>
         <ConfirmModal
           title="Remove the board"
