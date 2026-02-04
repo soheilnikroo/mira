@@ -1,5 +1,6 @@
 import { useOrganization } from '@clerk/nextjs';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { useApiMutation } from '@/hooks/use-api-mutation';
 
 const EmptyBoards = () => {
   const { organization } = useOrganization();
+  const router = useRouter();
   const { mutate: createBoard, pending } = useApiMutation(api.board.create);
 
   const handleCreate = async () => {
@@ -17,8 +19,12 @@ const EmptyBoards = () => {
     }
 
     try {
-      await createBoard({ title: 'Untitled Board', orgId: organization.id });
+      const boardId = await createBoard({
+        title: 'Untitled Board',
+        orgId: organization.id,
+      });
       toast.success('Board created successfully');
+      router.push(`/board/${boardId}`);
     } catch (error) {
       toast.error('Failed to create board', {
         description: 'Please try again later.',

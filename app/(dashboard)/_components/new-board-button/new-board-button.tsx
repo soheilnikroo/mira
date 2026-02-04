@@ -1,4 +1,5 @@
 import { Loader2, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 import { toast } from 'sonner';
 
@@ -10,11 +11,13 @@ import type { NewBoardButtonProps } from './new-board-button.type';
 
 const NewBoardButton = ({ orgId, disabled }: NewBoardButtonProps) => {
   const { mutate: createBoard, pending } = useApiMutation(api.board.create);
+  const router = useRouter();
 
   const handleCreate = async () => {
     try {
-      await createBoard({ title: 'Untitled Board', orgId });
+      const boardId = await createBoard({ title: 'Untitled Board', orgId });
       toast.success('Board created successfully');
+      router.push(`/board/${boardId}`);
     } catch (error) {
       toast.error('Failed to create board', {
         description: 'Please try again later.',
