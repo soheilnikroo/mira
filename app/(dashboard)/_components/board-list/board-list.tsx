@@ -14,9 +14,13 @@ import { NewBoardButton } from '../new-board-button';
 import type { BoardListProps } from './board-list.types';
 
 const BoardList = ({ orgId, query }: BoardListProps) => {
-  const data = useQuery(api.boards.list, { orgId });
   const search = query.get('search');
   const favorites = query.get('favorites');
+  const data = useQuery(api.boards.list, {
+    orgId,
+    search: search ?? undefined,
+    favorites: favorites ? true : false,
+  });
 
   if (data === undefined) {
     return (
