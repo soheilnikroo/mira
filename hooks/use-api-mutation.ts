@@ -1,6 +1,5 @@
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 import type { FunctionReference } from 'convex/server';
 
@@ -15,13 +14,6 @@ export const useApiMutation = (mutation: FunctionReference<'mutation'>) => {
       setPending(false);
       return result;
     } catch (error) {
-      toast.error('Failed to execute mutation', {
-        description: 'Please try again later.',
-        action: {
-          label: 'Try again',
-          onClick: () => mutate(args),
-        },
-      });
       console.error(error);
     }
     setPending(false);

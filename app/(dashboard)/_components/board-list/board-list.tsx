@@ -1,14 +1,15 @@
 'use client';
 
 import { useQuery } from 'convex/react';
-import { Loader2 } from 'lucide-react';
 
 import { api } from '@/convex/_generated/api';
 
 import { BoardCard } from '../board-card';
+import { BoardCardSkeleton } from '../board-card/sub-components/board-card-skeleton';
 import { EmptyBoards } from '../empty-boards';
 import { EmptyFavorites } from '../empty-favorites';
 import { EmptySearch } from '../empty-search';
+import { NewBoardButton } from '../new-board-button';
 
 import type { BoardListProps } from './board-list.types';
 
@@ -19,8 +20,17 @@ const BoardList = ({ orgId, query }: BoardListProps) => {
 
   if (data === undefined) {
     return (
-      <div className="flex-1 h-full flex items-center justify-center">
-        <Loader2 className="w-4 h-4 animate-spin" />
+      <div>
+        <h2 className="text-3xl">
+          {favorites ? 'Favorite Boards' : 'Team Boards'}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 mt-8 pb-10">
+          <NewBoardButton orgId={orgId} disabled />
+          <BoardCardSkeleton />
+          <BoardCardSkeleton />
+          <BoardCardSkeleton />
+          <BoardCardSkeleton />
+        </div>
       </div>
     );
   }
@@ -43,6 +53,7 @@ const BoardList = ({ orgId, query }: BoardListProps) => {
         {favorites ? 'Favorite Boards' : 'Team Boards'}
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 mt-8 pb-10">
+        <NewBoardButton orgId={orgId} />
         {data.map((board) => (
           <BoardCard
             key={board._id}
