@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 
-import { mutation } from './_generated/server';
+import { mutation, query } from './_generated/server';
 
 const images = [
   'https://doodleipsum.com/700/flat',
@@ -55,7 +55,7 @@ export const remove = mutation({
     const favorite = await ctx.db
       .query('userFavorites')
       .withIndex('by_user_board', (q) =>
-        q.eq('userId', identity.subject).eq('boardId', args.id)
+        q.eq('userId', identity.subject).eq('boardId', args.id),
       )
       .unique();
 
@@ -118,7 +118,7 @@ export const favorite = mutation({
     const existingFavorite = await ctx.db
       .query('userFavorites')
       .withIndex('by_user_board', (q) =>
-        q.eq('userId', userId).eq('boardId', board._id)
+        q.eq('userId', userId).eq('boardId', board._id),
       )
       .unique();
 
@@ -157,7 +157,7 @@ export const unFavorite = mutation({
     const existingFavorite = await ctx.db
       .query('userFavorites')
       .withIndex('by_user_board', (q) =>
-        q.eq('userId', userId).eq('boardId', board._id)
+        q.eq('userId', userId).eq('boardId', board._id),
       )
       .unique();
 
@@ -165,6 +165,21 @@ export const unFavorite = mutation({
       throw new Error('Favorite board not found');
     } else {
       await ctx.db.delete(existingFavorite._id);
+    }
+
+    return board;
+  },
+});
+
+export const get = query({
+  args: {
+    id: v.id('boards'),
+  },
+  handler: async (ctx, args) => {
+    const board = await ctx.db.get(args.id);
+
+    if (!board) {
+      throw new Error('Board not found');
     }
 
     return board;

@@ -128,3 +128,54 @@ html,
 body {
   height: 100%;
 }
+
+@keyframes emojiRise {
+  0% {
+    transform: translateY(20px) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-25vh) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50vh) scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes confettiExplode {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes confettiParticle {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.emoji-reaction,
+.confetti-particle {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+#liveblocks-badge {
+  display: none !important;
+}

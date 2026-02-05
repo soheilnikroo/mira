@@ -10,10 +10,14 @@
     "lint:fix": "eslint --fix",
     "type-check": "tsc --noEmit",
     "prepare": "husky",
-    "convex:start": "npx convex dev"
+    "convex:start": "npx convex dev",
+    "liveblocks:start": "liveblocks dev"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
+    "@liveblocks/client": "^3.13.3",
+    "@liveblocks/node": "^3.13.3",
+    "@liveblocks/react": "^3.13.3",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
@@ -23,6 +27,7 @@
     "convex-helpers": "^0.1.111",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.562.0",
+    "nanoid": "^5.1.6",
     "next": "16.1.1",
     "next-themes": "^0.4.6",
     "query-string": "^9.3.1",
