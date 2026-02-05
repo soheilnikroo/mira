@@ -1,0 +1,39 @@
+name: Deploy Convex
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'convex/**'
+      - '.github/workflows/convex-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-convex:
+    name: Deploy Convex Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy to Convex
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          npx convex deploy --cmd-url-env-var-name CONVEX_DEPLOYMENT_URL
