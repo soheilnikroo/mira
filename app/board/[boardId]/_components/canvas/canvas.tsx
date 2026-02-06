@@ -163,6 +163,51 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
     [canvasState],
   );
 
+  const translateSelectedLayer = useMutation(
+    ({ storage, self }, point: Point) => {
+      if (canvasState.mode !== CanvasMode.Translating) {
+        return;
+      }
+
+      const offset = {
+        x: point.x - canvasState.current.x,
+        y: point.y - canvasState.current.y,
+      };
+
+      const liveLayers = storage.get('layers');
+
+      for (const layerId of self.presence.selection) {
+        const layer = liveLayers.get(layerId);
+
+        if (layer) {
+          layer.update({
+            x: layer.get('x') + offset.x,
+            y: layer.get('y') + offset.y,
+          });
+        }
+      }
+
+      setCanvasState({
+        mode: CanvasMode.Translating,
+        current: point,
+      });
+    },
+    [canvasState],
+  );
+
+  const unSelectLayers = useMutation(({ self, setMyPresence }) => {
+    if (self.presence.selection.length > 0) {
+      setMyPresence(
+        {
+          selection: [],
+        },
+        {
+          addToHistory: true,
+        },
+      );
+    }
+  }, []);
+
   const onPointerMove = useMutation(
     ({ setMyPresence }, e: React.PointerEvent) => {
       if (isPanning) {
@@ -178,7 +223,9 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
 
       const current = pointerEventToCanvasPointer(e, camera);
 
-      if (canvasState.mode === CanvasMode.Resizing) {
+      if (canvasState.mode === CanvasMode.Translating) {
+        translateSelectedLayer(current);
+      } else if (canvasState.mode === CanvasMode.Resizing) {
         resizeSelectedLayer(current);
       }
 
@@ -197,16 +244,30 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
     });
   }, []);
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.button === 1) {
-      e.preventDefault();
-      setIsPanning(true);
-      lastPanPointRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-      };
-    }
-  }, []);
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      const point = pointerEventToCanvasPointer(e, camera);
+
+      if (canvasState.mode === CanvasMode.Inserting) {
+        return;
+      }
+
+      if (e.button === 1) {
+        e.preventDefault();
+        setIsPanning(true);
+        lastPanPointRef.current = {
+          x: e.clientX,
+          y: e.clientY,
+        };
+      }
+
+      setCanvasState({
+        origin: point,
+        mode: CanvasMode.Pressing,
+      });
+    },
+    [canvasState.mode, camera],
+  );
 
   const onPointerUp = useMutation(
     ({}, e: React.PointerEvent) => {
@@ -218,7 +279,15 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
 
       const pointer = pointerEventToCanvasPointer(e, camera);
 
-      if (canvasState.mode === CanvasMode.Inserting) {
+      if (
+        canvasState.mode === CanvasMode.None ||
+        canvasState.mode === CanvasMode.Pressing
+      ) {
+        unSelectLayers();
+        setCanvasState({
+          mode: CanvasMode.None,
+        });
+      } else if (canvasState.mode === CanvasMode.Inserting) {
         insertLayer(canvasState.layerType, pointer);
       } else {
         setCanvasState({
@@ -228,7 +297,7 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
 
       history.resume();
     },
-    [camera, canvasState, history, insertLayer],
+    [camera, canvasState, history, insertLayer, unSelectLayers],
   );
 
   const selections = useOthersMapped((other) => other.presence.selection);
