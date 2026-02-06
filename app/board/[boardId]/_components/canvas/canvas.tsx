@@ -15,7 +15,11 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Info } from '@/app/board/[boardId]/_components/info';
 import { Participants } from '@/app/board/[boardId]/_components/participants';
 import { Toolbar } from '@/app/board/[boardId]/_components/tool-bar';
-import { connectionIdToColor, pointerEventToCanvasPointer } from '@/lib/utils';
+import {
+  connectionIdToColor,
+  pointerEventToCanvasPointer,
+  resizeLayer,
+} from '@/lib/utils';
 import {
   type Camera,
   CanvasMode,
@@ -24,6 +28,8 @@ import {
   type Layer,
   type LayerType,
   type Point,
+  type Side,
+  type XYWH,
 } from '@/types/canvas';
 
 import CursorPresence from '../cursor-presence/cursor-presence';
@@ -135,6 +141,28 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
     [isPanning],
   );
 
+  const resizeSelectedLayer = useMutation(
+    ({ storage, self }, point: Point) => {
+      if (canvasState.mode !== CanvasMode.Resizing) {
+        return;
+      }
+
+      const newBounds = resizeLayer(
+        canvasState.initialBounds,
+        canvasState.corner,
+        point,
+      );
+
+      const liveLayers = storage.get('layers');
+      const layer = liveLayers.get(self.presence.selection[0]);
+
+      if (layer) {
+        layer.update(newBounds);
+      }
+    },
+    [canvasState],
+  );
+
   const onPointerMove = useMutation(
     ({ setMyPresence }, e: React.PointerEvent) => {
       if (isPanning) {
@@ -150,11 +178,15 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
 
       const current = pointerEventToCanvasPointer(e, camera);
 
+      if (canvasState.mode === CanvasMode.Resizing) {
+        resizeSelectedLayer(current);
+      }
+
       setMyPresence({
         cursor: current,
       });
     },
-    [camera, isPanning],
+    [camera, isPanning, canvasState, resizeSelectedLayer],
   );
 
   const onPointerLeave = useMutation(({ setMyPresence }) => {
@@ -247,6 +279,17 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
     [setCanvasState, camera, history, canvasState.mode],
   );
 
+  const onResizeHandlePointerDown = useCallback(
+    (corner: Side, initialBounds: XYWH) => {
+      setCanvasState({
+        mode: CanvasMode.Resizing,
+        initialBounds,
+        corner,
+      });
+    },
+    [history],
+  );
+
   return (
     <main className="h-full w-full relative bg-neutral-100 touch-none">
       <Info boardId={boardId} />
@@ -292,7 +335,7 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
               selectionColor={layerIdsToColorSelection[layerId] || '#000'}
             />
           ))}
-          <SelectionBox onResizeHandlePointerDown={() => {}} />
+          <SelectionBox onResizeHandlePointerDown={onResizeHandlePointerDown} />
           <CursorPresence />
         </g>
       </svg>

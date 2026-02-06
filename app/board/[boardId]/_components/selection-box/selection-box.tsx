@@ -4,7 +4,7 @@ import { useSelf, useStorage } from '@liveblocks/react';
 import { memo } from 'react';
 
 import { useSelectionBounds } from '@/hooks/use-selection-bounds';
-import { LayerType } from '@/types/canvas';
+import { LayerType, Side } from '@/types/canvas';
 
 import { HANDLE_WIDTH } from './selection-box.vonstants';
 
@@ -52,6 +52,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Top + Side.Left, bounds);
             }}
           />
           <rect
@@ -66,6 +67,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Top, bounds);
             }}
           />
           <rect
@@ -80,6 +82,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Top + Side.Right, bounds);
             }}
           />
           <rect
@@ -94,6 +97,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Right, bounds);
             }}
           />
           <rect
@@ -108,6 +112,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Bottom + Side.Right, bounds);
             }}
           />
           <rect
@@ -122,6 +127,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Bottom, bounds);
             }}
           />
           <rect
@@ -136,6 +142,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Bottom + Side.Left, bounds);
             }}
           />
           <rect
@@ -150,6 +157,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
             }}
             onPointerDown={(e) => {
               e.stopPropagation();
+              onResizeHandlePointerDown(Side.Left, bounds);
             }}
           />
         </>
