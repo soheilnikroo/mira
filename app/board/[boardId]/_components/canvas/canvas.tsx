@@ -37,6 +37,7 @@ import EmojiReactions, { type EmojiReactionsHandle } from '../emoji-reactions';
 import EmojiToolbar from '../emoji-toolbar';
 import { LayerPreview } from '../layer-preview';
 import { SelectionBox } from '../selection-box';
+import SelectionTools from '../selection-tools/selection-tools';
 
 import { MAX_LAYERS } from './canvas.constants';
 
@@ -381,6 +382,7 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
         }}
       />
       <EmojiReactions ref={emojiReactionsRef} />
+      <SelectionTools camera={camera} setLastUsedCursor={setLastUsedCursor} />
       <svg
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}

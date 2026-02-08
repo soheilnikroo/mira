@@ -17,7 +17,7 @@ const Rectangle = ({
       onPointerDown={(e: React.PointerEvent) => onPointerDown(e, id)}
       width={width}
       height={height}
-      fill={fill ? colorToCSS(fill) : '#fff'}
+      fill={fill ? colorToCSS(fill) : '#000'}
       style={{
         transform: `translate(${x}px, ${y}px)`,
       }}

@@ -29,7 +29,7 @@ const SelectionBox = ({ onResizeHandlePointerDown }: SelectionBoxProps) => {
   return (
     <>
       <rect
-        className="fill transparent stroke-blue-500 stroke-1 pointer-events-none"
+        className="fill-transparent stroke-blue-500 stroke-1 pointer-events-none"
         style={{
           transform: `translate(${bounds.x}px, ${bounds.y}px)`,
         }}

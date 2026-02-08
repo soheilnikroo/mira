@@ -9,7 +9,7 @@ import {
   type XYWH,
 } from '@/types/canvas';
 
-const COLORS = [
+export const COLORS = [
   '#DC2626',
   '#D97706',
   '#059669',
