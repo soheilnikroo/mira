@@ -5,6 +5,8 @@ import {
   type Camera,
   type Color,
   type Layer,
+  LayerType,
+  type PathLayer,
   type Point,
   Side,
   type XYWH,
@@ -19,11 +21,6 @@ export const COLORS = [
   '#DB2777',
   '#EA580C',
   '#0E7490',
-  '#10B981',
-  '#14B8A6',
-  '#8B5CF6',
-  '#EC4899',
-  '#F59E0B',
   '#10B981',
   '#14B8A6',
   '#8B5CF6',
@@ -124,4 +121,53 @@ export const getContrastingColor = (color: Color) => {
   const { r, g, b } = color;
   const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
   return luminance > 182 ? 'black' : 'white';
+};
+
+export const penPointsToPathLayer = (
+  points: number[][],
+  color: Color,
+): PathLayer => {
+  if (points.length < 2) {
+    throw new Error('At least 2 points are required');
+  }
+
+  let left = +Infinity;
+  let top = +Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+
+  for (const point of points) {
+    const [x, y] = point;
+
+    if (left > x) left = x;
+    if (top > y) top = y;
+    if (right < x) right = x;
+    if (bottom < y) bottom = y;
+  }
+
+  return {
+    type: LayerType.Path,
+    x: left,
+    y: top,
+    points: points.map(([x, y, pressure]) => [x - left, y - top, pressure]),
+    width: right - left,
+    height: bottom - top,
+    fill: color,
+  };
+};
+
+export const getSvgPathFromStroke = (stroke: number[][]) => {
+  if (!stroke.length) return '';
+
+  const d = stroke.reduce(
+    (acc, [x0, y0], i, arr) => {
+      const [x1, y1] = arr[(i + 1) % arr.length];
+      acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+      return acc;
+    },
+    ['M', ...stroke[0], 'Q'],
+  );
+
+  d.push('Z');
+  return d.join(' ');
 };

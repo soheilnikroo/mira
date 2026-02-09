@@ -7,17 +7,22 @@ import {
   useHistory,
   useMutation,
   useOthersMapped,
+  useSelf,
   useStorage,
 } from '@liveblocks/react';
 import { nanoid } from 'nanoid';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Info } from '@/app/board/[boardId]/_components/info';
 import { Participants } from '@/app/board/[boardId]/_components/participants';
 import { Toolbar } from '@/app/board/[boardId]/_components/tool-bar';
+import { useDeleteLayer } from '@/hooks/use-delte-layer';
+import { useDisableScrollBounce } from '@/hooks/use-disable-scroll-bounce';
 import {
+  colorToCSS,
   connectionIdToColor,
   findIntersectingLayersWithRectangle,
+  penPointsToPathLayer,
   pointerEventToCanvasPointer,
   resizeLayer,
 } from '@/lib/utils';
@@ -37,6 +42,7 @@ import CursorPresence from '../cursor-presence/cursor-presence';
 import EmojiReactions, { type EmojiReactionsHandle } from '../emoji-reactions';
 import EmojiToolbar from '../emoji-toolbar';
 import { LayerPreview } from '../layer-preview';
+import { Path } from '../path';
 import { SelectionBox } from '../selection-box';
 import SelectionTools from '../selection-tools/selection-tools';
 
@@ -45,8 +51,9 @@ import { MAX_LAYERS } from './canvas.constants';
 import type { Id } from '@/convex/_generated/dataModel';
 
 const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
+  useDisableScrollBounce();
   const layerIds = useStorage((root) => root.layerIds);
-
+  const pencilDraft = useSelf((self) => self.presence.pencilDraft);
   const [canvasState, setCanvasState] = useState<CanvasState>({
     mode: CanvasMode.None,
   });
@@ -56,8 +63,6 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
     g: 0,
     b: 0,
   });
-  const [isPanning, setIsPanning] = useState(false);
-  const lastPanPointRef = useRef<Point | null>(null);
   const lastScreenPositionRef = useRef<{ x: number; y: number } | null>(null);
   const emojiReactionsRef = useRef<EmojiReactionsHandle>(null);
 
@@ -120,28 +125,6 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
       };
     });
   }, []);
-
-  const onPointerMovePan = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isPanning || !lastPanPointRef.current) return;
-
-      e.preventDefault();
-
-      const deltaX = e.clientX - lastPanPointRef.current.x;
-      const deltaY = e.clientY - lastPanPointRef.current.y;
-
-      setCamera((prev) => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY,
-      }));
-
-      lastPanPointRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-      };
-    },
-    [isPanning],
-  );
 
   const resizeSelectedLayer = useMutation(
     ({ storage, self }, point: Point) => {
@@ -243,12 +226,33 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
     [layerIds],
   );
 
-  const onPointerMove = useMutation(
-    ({ setMyPresence }, e: React.PointerEvent) => {
-      if (isPanning) {
+  const continueDrawing = useMutation(
+    ({ self, setMyPresence }, point: Point, e: React.PointerEvent) => {
+      const { pencilDraft } = self.presence;
+
+      if (
+        canvasState.mode !== CanvasMode.Pencil ||
+        e.buttons !== 1 ||
+        pencilDraft == null
+      ) {
         return;
       }
 
+      setMyPresence({
+        cursor: point,
+        pencilDraft:
+          pencilDraft?.length === 1 &&
+          pencilDraft[0][0] === point.x &&
+          pencilDraft[0][1] === point.y
+            ? pencilDraft
+            : [...pencilDraft, [point.x, point.y, e.pressure]],
+      });
+    },
+    [canvasState.mode],
+  );
+
+  const onPointerMove = useMutation(
+    ({ setMyPresence }, e: React.PointerEvent) => {
       e.preventDefault();
 
       lastScreenPositionRef.current = {
@@ -266,18 +270,35 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
         translateSelectedLayer(current);
       } else if (canvasState.mode === CanvasMode.Resizing) {
         resizeSelectedLayer(current);
+      } else if (canvasState.mode === CanvasMode.Pencil) {
+        continueDrawing(current, e);
       }
 
       setMyPresence({
         cursor: current,
       });
     },
-    [camera, isPanning, canvasState, resizeSelectedLayer],
+    [
+      camera,
+      canvasState,
+      resizeSelectedLayer,
+      continueDrawing,
+      startMultiSelection,
+      updateSelectionNet,
+    ],
+  );
+
+  const startDrawing = useMutation(
+    ({ setMyPresence }, point: Point, pressure: number) => {
+      setMyPresence({
+        pencilDraft: [[point.x, point.y, pressure]],
+        penColor: lastUsedCursor,
+      });
+    },
+    [lastUsedCursor],
   );
 
   const onPointerLeave = useMutation(({ setMyPresence }) => {
-    setIsPanning(false);
-    lastPanPointRef.current = null;
     setMyPresence({
       cursor: null,
     });
@@ -291,13 +312,9 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
         return;
       }
 
-      if (e.button === 1) {
-        e.preventDefault();
-        setIsPanning(true);
-        lastPanPointRef.current = {
-          x: e.clientX,
-          y: e.clientY,
-        };
+      if (canvasState.mode === CanvasMode.Pencil) {
+        startDrawing(point, e.pressure);
+        return;
       }
 
       setCanvasState({
@@ -305,17 +322,46 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
         mode: CanvasMode.Pressing,
       });
     },
-    [canvasState.mode, camera],
+    [canvasState.mode, camera, startDrawing],
+  );
+
+  const insertPath = useMutation(
+    ({ storage, self, setMyPresence }) => {
+      const liveLayers = storage.get('layers');
+      const { pencilDraft } = self.presence;
+
+      if (
+        pencilDraft === null ||
+        pencilDraft.length < 2 ||
+        liveLayers.size >= MAX_LAYERS
+      ) {
+        setMyPresence({
+          pencilDraft: null,
+        });
+        return;
+      }
+
+      const layerId = nanoid();
+      liveLayers.set(
+        layerId,
+        new LiveObject(penPointsToPathLayer(pencilDraft, lastUsedCursor)),
+      );
+
+      const liveLayerIds = storage.get('layerIds');
+      liveLayerIds.push(layerId);
+
+      setMyPresence({
+        pencilDraft: null,
+      });
+      setCanvasState({
+        mode: CanvasMode.Pencil,
+      });
+    },
+    [lastUsedCursor],
   );
 
   const onPointerUp = useMutation(
     ({}, e: React.PointerEvent) => {
-      if (e.button === 1) {
-        setIsPanning(false);
-        lastPanPointRef.current = null;
-        return;
-      }
-
       const pointer = pointerEventToCanvasPointer(e, camera);
 
       if (
@@ -326,6 +372,8 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
         setCanvasState({
           mode: CanvasMode.None,
         });
+      } else if (canvasState.mode === CanvasMode.Pencil) {
+        insertPath();
       } else if (canvasState.mode === CanvasMode.Inserting) {
         insertLayer(canvasState.layerType, pointer);
       } else {
@@ -336,7 +384,15 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
 
       history.resume();
     },
-    [camera, canvasState, history, insertLayer, unSelectLayers],
+    [
+      camera,
+      canvasState,
+      history,
+      insertLayer,
+      unSelectLayers,
+      insertPath,
+      setCanvasState,
+    ],
   );
 
   const selections = useOthersMapped((other) => other.presence.selection);
@@ -398,6 +454,45 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
     [history],
   );
 
+  const deleteLayers = useDeleteLayer();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'z': {
+          if (e.ctrlKey || e.metaKey) {
+            if (e.shiftKey) {
+              history.redo();
+            } else {
+              history.undo();
+            }
+          }
+          break;
+        }
+        case 'y': {
+          if (e.ctrlKey || e.metaKey) {
+            history.redo();
+          }
+          break;
+        }
+        case 'Delete': {
+          deleteLayers();
+          break;
+        }
+        case 'Backspace': {
+          deleteLayers();
+          break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [deleteLayers, history]);
+
   return (
     <main className="h-full w-full relative bg-neutral-100 touch-none">
       <Info boardId={boardId} />
@@ -427,13 +522,7 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
         onPointerLeave={onPointerLeave}
         className="h-screen w-screen"
         onWheel={onWheel}
-        onPointerMove={(e) => {
-          if (isPanning) {
-            onPointerMovePan(e);
-          } else {
-            onPointerMove(e);
-          }
-        }}
+        onPointerMove={onPointerMove}
       >
         <g style={{ transform: `translate(${camera.x}px, ${camera.y}px)` }}>
           {layerIds?.map((layerId) => (
@@ -456,6 +545,14 @@ const Canvas = ({ boardId }: { boardId: Id<'boards'> }) => {
               />
             )}
           <CursorPresence />
+          {pencilDraft != null && pencilDraft.length > 0 && (
+            <Path
+              points={pencilDraft}
+              fill={colorToCSS(lastUsedCursor)}
+              x={0}
+              y={0}
+            />
+          )}
         </g>
       </svg>
     </main>

@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 
+import { Loading } from '@/components/auth/loading';
 import { ConvexClientProvider } from '@/providers/convex-client-provider';
 import { ModalProvider } from '@/providers/modal-provider';
 
@@ -33,11 +35,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ConvexClientProvider>
-          <Toaster />
-          <ModalProvider />
-          {children}
-        </ConvexClientProvider>
+        <Suspense fallback={<Loading />}>
+          <ConvexClientProvider>
+            <Toaster />
+            <ModalProvider />
+            {children}
+          </ConvexClientProvider>
+        </Suspense>
       </body>
     </html>
   );
