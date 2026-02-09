@@ -5,7 +5,10 @@ import { memo } from 'react';
 
 import { LayerType } from '@/types/canvas';
 
+import { Ellipse } from '../ellipse';
+import { Note } from '../note';
 import Rectangle from '../rectangle/rectangle';
+import { Text } from '../text';
 
 import type { LayerPreviewProps } from './layer-preview.types';
 
@@ -30,29 +33,34 @@ const LayerPreview = ({
       );
     case LayerType.Ellipse:
       return (
-        <ellipse
+        <Ellipse
           id={id}
-          onPointerDown={(e: React.PointerEvent) => onLayerPointerDown(e, id)}
-          rx={100}
-          ry={100}
-          fill={selectionColor ?? 'transparent'}
+          layer={layer}
+          onPointerDown={onLayerPointerDown}
+          selectionColor={selectionColor}
         />
       );
     case LayerType.Text:
       return (
-        <text
+        <Text
           id={id}
-          onPointerDown={(e: React.PointerEvent) => onLayerPointerDown(e, id)}
-          x={100}
-          y={100}
-          fill={selectionColor ?? 'transparent'}
+          layer={layer}
+          onPointerDown={onLayerPointerDown}
+          selectionColor={selectionColor}
         />
       );
     case LayerType.Note:
+      return (
+        <Note
+          id={id}
+          layer={layer}
+          onPointerDown={onLayerPointerDown}
+          selectionColor={selectionColor}
+        />
+      );
+    default:
       return null;
   }
-
-  return null;
 };
 
 LayerPreview.displayName = 'LayerPreview';
